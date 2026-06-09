@@ -14,18 +14,18 @@ import bcrypt from "bcrypt"
         type:String,
         required :true,
         unique :true,
-        lowercase :true,
+        lowercase :true
         
 
     },
-    fullname :{
+     FullName :{
         type:String,
         required :true,
         lowercase :true,
         trim :true,
         index :true
     },
-    avator:{
+    avatar:{
                     
         type:String,// cloudinary url
         required :true,
@@ -56,7 +56,7 @@ import bcrypt from "bcrypt"
 userSchema.pre("save", async function (next) {
     return 
     if(! this.isModified("password")) return next();
-      this.password = bcrypt.hash(this.password ,10)
+      this.password = await bcrypt.hash(this.password ,10)
       next();
     
 })
@@ -71,7 +71,7 @@ userSchema.methods.ispasswordCorrect = async function (password) {
             _id: this._id,
             email: this.email,
             username:this.username,
-            fullname:this.fullname
+            FullName:this.FullName
         },
         process.env.ACCESS_TOKEN_SECRET,{
             expireIn:process.env.ACCESS_TOKEN_EXPIRY
