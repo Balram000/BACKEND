@@ -206,12 +206,65 @@ try {
 
 })
 
+const changecurrentPassword = asyncHandler
+(async(req,res) =>{
+    const {oldpassword ,newpassword} = req.body
+
+    const user = await User.findById(req.user?._id)
+  const isPasswordCorrect= await user.isPasswordCorrect(oldpassword )
+
+  if(!isPasswordCorrect){
+    throw new ApiError(400,"invalid lod password")
+  }
+ user.password=newpassword
+ await user.save({validateBeforeSave :false})
+ return res 
+ .status(200)
+ .json(new ApiResponse(200,"newpassword sucessfullly"))
+
+})
+
+const  getCurrentUser = asyncHandler (async(req,res)=>{
+ return res 
+ .status(200)
+ .json(200,req.user,"current user fetched successfully")
+})
+
+const updateaccountDetails = asyncHandler(async(req,res)=>{
+  const {FullName,email} =req.body
+  if (!FullName ||!email) {
+    throw new ApiError(400," all field are required ")
+
+  }
+
+ const user= User.findByIdAndUpdate(req.user?._id,
+    {
+        $set :{FullName:FullName,email:email}
+    },
+    {new:true}
+  ).select(" -password ")
+
+
+  return res 
+  .status(200)
+  .json(new ApiResponse(200,user,"account details updates successfully"))
+})
+
+
+
+
+
+
+
 
 export {
     registerUser,
     loginuser,
     logoutUser,
     refeshAccestoken,
+    changecurrentPassword,
+     getCurrentUser,
+     updateaccountDetails
 }
 
 
