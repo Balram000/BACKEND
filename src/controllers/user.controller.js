@@ -4,6 +4,7 @@ import { User } from "../models/user.model.js"
 import { uploardCloundinary } from '../utils/cloundlary.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import jwt  from 'jsonwebtoken';
+import { error } from 'console';
 
 const generateAccessandrefeshtoken = async (userId) => {
     try {
@@ -252,9 +253,71 @@ const updateaccountDetails = asyncHandler(async(req,res)=>{
 
 
 
+const  updateuseravatat = asyncHandler(async(req,res) =>{
+    const avatarlocalpath =res.file?.path
+    if (!avatarlocalpath) {
+        throw new ApiError(400,"avatar file is missing")
+        
+    }
+
+    const avatar = await uploardCloundinary(avatarlocalpath)
+    if(!avatar.url){
+        throw new ApiError(400,"avatar file is missing on uploading time ")
+
+    }
+
+   const user=  await  User.findByIdAndUpdate(req.user?._id,
+        {
+            $set :{
+            avatar:avatar.url
+        }},{
+            new :true
+        }
+    ).select("-password")
+return res 
+    .status(200)
+    .json(
+        new ApiResponse(200,user,"avatar update successfully")
+    )
+
+    
 
 
+})
 
+
+const  updateuserCoverImage = asyncHandler(async(req,res) =>{
+    const coverimagelocalpath =res.file?.path
+    if (!caverimagelocalpath) {
+        throw new ApiError(400,"caverimage file is missing")
+        
+    }
+
+    const  coverImage = await uploardCloundinary(caverimagelocalpath)
+    if(!coverImage.url){
+        throw new ApiError(400,"coverimage file is missing on uploading time ")
+
+    }
+
+    const user =await  User.findByIdAndUpdate(req.user?._id,
+        {
+            $set :{
+            coverImager:coverImage.url
+        }},{
+            new :true
+        }
+    ).select("-password")
+
+    return res 
+    .status(200)
+    .json(
+        new ApiResponse(200,user,"coverImage update successfully")
+    )
+
+    
+
+
+})
 
 
 export {
@@ -264,7 +327,9 @@ export {
     refeshAccestoken,
     changecurrentPassword,
      getCurrentUser,
-     updateaccountDetails
+     updateaccountDetails,
+     updateuseravatat,
+     updateuserCavarImage
 }
 
 
