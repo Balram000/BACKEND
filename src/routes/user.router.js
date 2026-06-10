@@ -24,6 +24,7 @@ registerUser
  router.route("/login").post(loginuser)
 
  router.route("/logout").post(verifyJWT ,logoutUser)
-
+ 
+ router.route("/refesh_token").post(refeshAccestoken)
 
  export default router
