@@ -3,6 +3,7 @@ import { ApiError } from '../utils/ApiError.js';
 import { User } from "../models/user.model.js"
 import { uploardCloundinary } from '../utils/cloundlary.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
+import jwt  from 'jsonwebtoken';
 
 const generateAccessandrefeshtoken = async (userId) => {
     try {
@@ -127,7 +128,7 @@ const loginuser = asyncHandler(async (req, res, next) => {
 
     const options = {
         httpOnly: true,
-        secure: false
+        secure: true
     }
    // console.log("options set",)
     return res
@@ -158,7 +159,7 @@ const logoutUser = asyncHandler(async (req, res, next) => {
     )
     const options = {
         httpOnly: true,
-        secure: false
+        secure: true
     }
     return res
         .status(200)
@@ -166,7 +167,44 @@ const logoutUser = asyncHandler(async (req, res, next) => {
         .clearCookie("refeshtoken", options)
         .json(new ApiResponse(200, {}, "user logoutuser sucessfully"))
 })
+const refeshAccestoken  =asyncHandler(async(req ,res) =>{
+    const incomingRefeshing= req.cookies.refeshtoken || req.body.refeshtoken
+    if(!incomingRefeshing){
+        throw new ApiError(401,"unauthorized request")
+    }
+try {
+    const decodetoken = jwt.verify(
+            incomingRefeshing,
+            process.env.REFRESH_TOKEN_SECRET
+        )
+    const user =await User.findById(decodetoken?._id)
+       if(!user){
+        throw new ApiError(401,"invalid refesh token")
+       } 
+       if (incomingRefeshing!==user?.refeshtoken) {
+        throw new ApiError(401,"refesh token is expired or used")
+        
+       }
+       const options={
+        httpOnly :true,
+        secure:true
+       }
+    const {accestoken,newrefeshtoken} =  await generateAccessandrefeshtoken(user._id)
+       return res
+       .status(200)
+       .cookie("accestoken" ,accestoken,options)
+       .cookie("refeshtoken",newrefeshtoken,options)
+       .json(
+        new ApiResponse(200,
+            accestoken ,newrefeshtoken ,"accestoken refeshed sccesfully"
+        )
+    
+       )
+} catch (error) {
+   throw new ApiError(401,error?.message ||"invalid refesh token") 
+}
 
+})
 
 
 export {
