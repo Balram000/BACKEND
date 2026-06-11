@@ -13,6 +13,7 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
         }
 
         const decodeedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET)
+        
         const user = await User.findById(decodeedToken?._id).select(" -password -refeshtoken")
         if (!user) {
             throw new ApiError(410, "invlid Access token")
