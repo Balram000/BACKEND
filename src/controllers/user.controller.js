@@ -6,6 +6,8 @@ import { ApiResponse } from '../utils/ApiResponse.js';
 import jwt from 'jsonwebtoken';
 import { error } from 'console';
 import { subcription } from '../models/subcription.models.js';
+import mongoose from 'mongoose';
+import { pipeline } from 'stream';
 
 const generateAccessandrefeshtoken = async (userId) => {
     try {
@@ -348,7 +350,7 @@ const getuserChannelprofile = asyncHandler(async (req, res) => {
                 from: "subcription",
                 localField: "_id",
                 foreignField: "subscriber",
-                as: "subcription2"
+                as: "subcribedto"
             }
         },
         {
@@ -358,35 +360,100 @@ const getuserChannelprofile = asyncHandler(async (req, res) => {
                 }, channelSubscriberedtocount: {
                     $size: "$subscribedto"
                 },
-                isSubscribedtocount :{
-                    $cond :{
-                        if :{$in :[req.user?._id,"subcribers.subscriber"]},
-                        then :true,
-                        else :false
+                isSubscribedtocount: {
+                    $cond: {
+                        if: { $in: [req.user?._id, "$subcribers.subscriber"] },
+                        then: true,
+                        else: false
                     }
                 }
 
             }
-        },{
-            $project :{
-                FullName :1,
-                username :1,
-               subcriberscount : 1,
-               channelSubscriberedtocount :1,
-               isSubscribedtocount :1,
-               avatar :1,
-               coverImage :1,
-               email :1
-               
+        }, {
+            $project: {
+                FullName: 1,
+                username: 1,
+                subcriberscount: 1,
+                channelSubscriberedtocount: 1,
+                isSubscribedtocount: 1,
+                avatar: 1,
+                coverImage: 1,
+                email: 1
+
             }
         }
 
 
 
     ])
+
+    const channel = await User.aggregate([
+    ])
+    if (!channel?.length)
+        throw new ApiError(404, "chnnel does not exists")
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200, channel[0], "user  cahhnel fetch succesfully")
+        )
+
 })
 
+const getwatchHistory = asyncHandler(async (req, res) => {
+    const user = await User.aggregate([{
+        $match: {
+            _id: new mongoose.Types.ObjectId(req.user._id)
+        }
+    }, {
 
+        $lookup: {
+            from: "videos",
+            localField: "watchHistroy",
+            foreignField: "_id",
+            as: "watchHistroy",
+            pipeline : [
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "owner",
+                        foreignField: " _id",
+                        as: "owner",
+                        pipeline: [
+                            {
+                                $project :{
+                                    FullName :1 ,
+                                    username :1,
+                                    avatar :1 
+                                }
+                            },
+                          {
+                            $addFields :{
+                                owneer : {
+                                    $first : "$owner"
+                                }
+                            }
+                          }  
+                        ]
+                    }
+                }
+            ]
+  
+          }
+      }
+
+    ]
+  )
+  return res
+  .status(200)
+  .json (
+    new ApiResponse (
+        200,user[0].watchHistroy ,"watch histroy fectch sucessfullly"
+  )
+  )
+}
+
+)
 
 
 export {
@@ -399,7 +466,8 @@ export {
     updateaccountDetails,
     updateuseravatat,
     updateuserCoverImage,
-    getuserChannelprofile
+    getuserChannelprofile,
+    getwatchHistory
 }
 
 
